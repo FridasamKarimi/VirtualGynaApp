@@ -1,0 +1,18 @@
+<?xml version="1.0" encoding="utf-8"?>
+<menu xmlns:android="http://schemas.android.com/apk/res/android">
+    <item
+        android:id="@+id/icHome"
+        android:icon="@drawable/ic_baseline_home_24"
+        android:title="Home" />
+    <item
+        android:id="@+id/icMonitor"
+        android:icon="@drawable/ic_baseline_monitor_heart_24"
+        android:title="Monitor" />
+    <item
+        android:id="@+id/icProfile"
+        android:icon="@drawable/ic_baseline_person_outline_24"
+        android:title="Profile"
+
+        />
+
+</menu>
