@@ -5,10 +5,216 @@
     android:layout_height="match_parent"
     tools:context=".fragment.TrackFragment">
 
-    <!-- TODO: Update blank fragment layout -->
+
     <TextView
         android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:padding="10dp"
+        android:text="Lets Track you"
+        android:textAlignment="center"
+        android:textAppearance="@style/TextAppearance.AppCompat.Title"
+        android:textSize="20sp" />
+
+    <LinearLayout
+        android:layout_width="match_parent"
         android:layout_height="match_parent"
-        android:text="@string/hello_blank_fragment" />
+        android:layout_marginTop="10dp"
+        android:orientation="vertical"
+        android:padding="20dp">
+
+        <ScrollView
+            android:layout_width="match_parent"
+            android:layout_height="match_parent"
+            android:fillViewport="true">
+
+            <TableLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:stretchColumns="1">
+
+                <EditText
+                    android:id="@+id/lastPeriodDateEditText"
+                    android:layout_width="match_parent"
+                    android:layout_height="50dp"
+                    android:layout_marginTop="16dp"
+                    android:background="@drawable/edit_text_rounded_corners"
+                    android:hint="Enter Last Period Date (dd/MM/yyyy)"
+                    android:inputType="date" />
+
+                <Button
+                    android:id="@+id/calculateButton"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_below="@id/lastPeriodDateEditText"
+                    android:layout_marginTop="16dp"
+                    android:backgroundTint="#2196F3"
+                    android:text="Calculate Pregnancy Info" />
+
+                <TextView
+                    android:id="@+id/dueDateTextView"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_below="@id/calculateButton"
+                    android:layout_marginTop="16dp"
+                    android:text="Due Date: "
+                    android:textSize="20sp"
+                    android:textStyle="bold" />
+
+                <TextView
+                    android:id="@+id/weeksElapsedTextView"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_below="@id/dueDateTextView"
+                    android:layout_marginTop="16dp"
+                    android:text="Weeks Elapsed: "
+                    android:textSize="20sp"
+                    android:textStyle="bold" />
+
+                <TextView
+                    android:id="@+id/fertilityWindowTextView"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_below="@id/weeksElapsedTextView"
+                    android:layout_marginTop="16dp"
+                    android:text="Fertility Window: "
+                    android:textSize="20sp"
+                    android:textStyle="bold" />
+
+                <TextView
+                    android:id="@+id/weightRecommendationTextView"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_below="@id/fertilityWindowTextView"
+                    android:layout_marginTop="16dp"
+                    android:text="Weight Recommendation: "
+                    android:textSize="20sp"
+                    android:textStyle="bold" />
+
+                <!-- Buttons for adding milestones, visits, metrics, and generating report -->
+                <EditText
+                    android:id="@+id/milestoneNameEditText"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="16dp"
+                    android:background="@drawable/edit_text_rounded_corners"
+                    android:drawablePadding="8dp"
+                    android:hint="Milestone Name"
+                    android:inputType="text"
+                    android:padding="12dp" />
+
+                <EditText
+                    android:id="@+id/milestoneDateEditText"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_below="@id/addMilestoneButton"
+                    android:layout_marginTop="16dp"
+                    android:background="@drawable/edit_text_rounded_corners"
+                    android:drawablePadding="8dp"
+                    android:hint="Milestone Date (dd/MM/yyyy)"
+                    android:inputType="date"
+                    android:padding="12dp" />
+
+                <Button
+                    android:id="@+id/addMilestoneButton"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_below="@id/weightRecommendationTextView"
+                    android:layout_marginTop="16dp"
+                    android:backgroundTint="#2196F3"
+                    android:text="Add Milestone" />
+
+                <EditText
+                    android:id="@+id/visitDateEditText"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_below="@id/addVisitButton"
+                    android:layout_marginTop="16dp"
+                    android:background="@drawable/edit_text_rounded_corners"
+                    android:drawablePadding="8dp"
+                    android:hint="Visit Date (dd/MM/yyyy)"
+                    android:inputType="date"
+                    android:padding="12dp" />
+
+                <EditText
+                    android:id="@+id/visitNotesEditText"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_below="@id/addMetricButton"
+                    android:layout_marginTop="16dp"
+                    android:background="@drawable/edit_text_rounded_corners"
+                    android:drawablePadding="8dp"
+                    android:hint="Visit Notes"
+                    android:inputType="text"
+                    android:padding="12dp" />
+
+                <Button
+                    android:id="@+id/addVisitButton"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_below="@id/addMilestoneButton"
+                    android:layout_marginTop="16dp"
+                    android:backgroundTint="#2196F3"
+                    android:text="Add Prenatal Visit" />
+
+                <EditText
+                    android:id="@+id/metricTypeEditText"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_below="@id/generateReportButton"
+                    android:layout_marginTop="16dp"
+                    android:background="@drawable/edit_text_rounded_corners"
+                    android:drawablePadding="8dp"
+                    android:hint="Metric Type"
+                    android:inputType="text"
+                    android:padding="12dp" />
+
+
+                <EditText
+                    android:id="@+id/metricValueEditText"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_below="@id/calculateButton"
+                    android:layout_marginTop="16dp"
+                    android:background="@drawable/edit_text_rounded_corners"
+                    android:drawablePadding="8dp"
+                    android:hint="Metric Value"
+                    android:inputType="numberDecimal"
+                    android:padding="12dp" />
+
+                <Button
+                    android:id="@+id/addMetricButton"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_below="@id/addVisitButton"
+                    android:layout_marginTop="16dp"
+                    android:backgroundTint="#2196F3"
+                    android:text="Add Monitoring Metric" />
+
+
+                <Button
+                    android:id="@+id/generateReportButton"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_below="@id/addMetricButton"
+                    android:layout_marginTop="16dp"
+                    android:backgroundTint="#2196F3"
+                    android:text="Generate Report" />
+
+                <!-- TextView to display generated report -->
+                <TextView
+                    android:id="@+id/reportTextView"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_below="@id/generateReportButton"
+                    android:layout_marginTop="16dp"
+                    android:text="Report will appear here"
+                    android:textSize="20sp"
+                    android:textStyle="bold" />
+
+            </TableLayout>
+        </ScrollView>
+
+    </LinearLayout>
+
 
 </FrameLayout>
