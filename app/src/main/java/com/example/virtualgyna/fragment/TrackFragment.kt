@@ -84,6 +84,9 @@ class TrackFragment : Fragment() {
             val fertilityWindowStart = dateFormat.format(fertilityWindowStartCalendar.time)
             val fertilityWindowEnd = dateFormat.format(fertilityWindowEndCalendar.time)
 
+            // Calculate Pregnancy Weight Recommendation (This is just a placeholder)
+            val weightRecommendation = "Consult your healthcare provider for personalized recommendations."
+
             // Generate Pregnancy Milestones
             milestonesList.clear()
             milestonesList.add(PregnancyMilestone("First Trimester", lastPeriodDate))
@@ -111,6 +114,7 @@ class TrackFragment : Fragment() {
             binding.dueDateTextView.text = dueDate
             binding.weeksElapsedTextView.text = weeksElapsed.toString()
             binding.fertilityWindowTextView.text = "$fertilityWindowStart - $fertilityWindowEnd"
+            binding.weightRecommendationTextView.text = weightRecommendation
         }
     }
 
