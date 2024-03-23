@@ -4,12 +4,16 @@ import android.os.Bundle
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
+import android.widget.Toast
 import androidx.fragment.app.Fragment
 import com.example.virtualgyna.databinding.FragmentTrackBinding
 import com.example.virtualgyna.models.MonitoringMetric
 import com.example.virtualgyna.models.PregnancyMilestone
 import com.example.virtualgyna.models.PrenatalVisit
+import com.example.virtualgyna.models.UpdatesData
 import com.example.virtualgyna.utils.ReportGenerator
+import com.google.firebase.auth.FirebaseAuth
+import com.google.firebase.database.FirebaseDatabase
 import java.text.SimpleDateFormat
 import java.util.*
 
@@ -17,6 +21,7 @@ import java.util.*
 class TrackFragment : Fragment() {
 
     private lateinit var binding: FragmentTrackBinding
+    private lateinit var auth: FirebaseAuth
 
     private val milestonesList = mutableListOf<PregnancyMilestone>()
     private val visitsList = mutableListOf<PrenatalVisit>()
@@ -35,6 +40,8 @@ class TrackFragment : Fragment() {
 
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         super.onViewCreated(view, savedInstanceState)
+
+        auth = FirebaseAuth.getInstance()
 
         binding.calculateButton.setOnClickListener {
             calculatePregnancyInfo()
@@ -84,6 +91,10 @@ class TrackFragment : Fragment() {
             val fertilityWindowStart = dateFormat.format(fertilityWindowStartCalendar.time)
             val fertilityWindowEnd = dateFormat.format(fertilityWindowEndCalendar.time)
 
+            // Calculate Pregnancy Weight Recommendation (This is just a placeholder)
+            val weightRecommendation =
+                "Consult your healthcare provider for personalized recommendations."
+
             // Generate Pregnancy Milestones
             milestonesList.clear()
             milestonesList.add(PregnancyMilestone("First Trimester", lastPeriodDate))
@@ -111,6 +122,7 @@ class TrackFragment : Fragment() {
             binding.dueDateTextView.text = dueDate
             binding.weeksElapsedTextView.text = weeksElapsed.toString()
             binding.fertilityWindowTextView.text = "$fertilityWindowStart - $fertilityWindowEnd"
+            binding.weightRecommendationTextView.text = weightRecommendation
         }
     }
 
@@ -148,6 +160,45 @@ class TrackFragment : Fragment() {
         val reportGenerator = ReportGenerator()
         val report = reportGenerator.generateReport(milestonesList, visitsList, metricsList)
         binding.reportTextView.text = report
+
+        // Get the current user's UID
+        val currentUserUid = FirebaseAuth.getInstance().currentUser?.uid
+
+        // Prepare the UpdatesData object
+        val updatesData = currentUserUid?.let {
+            UpdatesData(
+                uid = it, // Use the UID of the current user
+                milestones = milestonesList.joinToString(separator = "\n") { it.toString() },
+                visits = visitsList.joinToString(separator = "\n") { it.toString() },
+                metrics = metricsList.joinToString(separator = "\n") { it.toString() },
+                weightRecommendation = "Consult your healthcare provider for personalized recommendations."
+            )
+        }
+
+        // Get a reference to the Firebase Realtime Database
+        val database = FirebaseDatabase.getInstance().getReference("myTrack")
+
+        // Generate a unique key for the new data entry
+        val trackEntryKey = database.push().key ?: ""
+
+        // Write the data to the database under the unique key
+        val trackEntryRef = database.child(trackEntryKey)
+        trackEntryRef.setValue(updatesData)
+            .addOnSuccessListener {
+                // Data successfully saved
+                // You can add any success message or action here
+                Toast.makeText(requireContext(), "Data saved successfully!", Toast.LENGTH_SHORT)
+                    .show()
+            }
+            .addOnFailureListener { exception ->
+                // Failed to save data
+                // You can handle the error or display an error message here
+                Toast.makeText(
+                    requireContext(),
+                    "Failed to save data: ${exception.message}",
+                    Toast.LENGTH_SHORT
+                ).show()
+            }
     }
 
 

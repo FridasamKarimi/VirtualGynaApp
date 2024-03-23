@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "589832990607",
+    "project_id": "virtualgyna-80ada",
+    "storage_bucket": "virtualgyna-80ada.appspot.com"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:589832990607:android:3f9d48200b5b304dc5a5fa",
+        "android_client_info": {
+          "package_name": "com.example.virtualgyna"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyA6Bceqx6bSqee6Ft8-6CvVG8BgoyMwiRY"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}

@@ -1,60 +1,218 @@
 package com.example.virtualgyna.fragment
 
+import android.content.ContentValues.TAG
+import android.content.Intent
 import android.os.Bundle
-import androidx.fragment.app.Fragment
+import android.util.Log
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
-import com.example.virtualgyna.R
+import android.widget.Toast
+import androidx.fragment.app.Fragment
+import androidx.recyclerview.widget.LinearLayoutManager
+import com.example.virtualgyna.adapters.RecommendationsAdapter
+import com.example.virtualgyna.adapters.UpdatesAdapter
+import com.example.virtualgyna.adapters.WeeksAdapter
+import com.example.virtualgyna.ai.screens.Ai
+import com.example.virtualgyna.databinding.FragmentHomeBinding
+import com.example.virtualgyna.models.UpdatesData
+import com.example.virtualgyna.models.UserData
+import com.example.virtualgyna.models.WeekData
+import com.example.virtualgyna.screens.Week
+import com.google.firebase.Firebase
+import com.google.firebase.auth.FirebaseAuth
+import com.google.firebase.database.*
 
-// TODO: Rename parameter arguments, choose names that match
-// the fragment initialization parameters, e.g. ARG_ITEM_NUMBER
-private const val ARG_PARAM1 = "param1"
-private const val ARG_PARAM2 = "param2"
 
-/**
- * A simple [Fragment] subclass.
- * Use the [HomeFragment.newInstance] factory method to
- * create an instance of this fragment.
- */
 class HomeFragment : Fragment() {
-    // TODO: Rename and change types of parameters
-    private var param1: String? = null
-    private var param2: String? = null
 
-    override fun onCreate(savedInstanceState: Bundle?) {
-        super.onCreate(savedInstanceState)
-        arguments?.let {
-            param1 = it.getString(ARG_PARAM1)
-            param2 = it.getString(ARG_PARAM2)
-        }
-    }
+    private lateinit var binding: FragmentHomeBinding
+
+    private lateinit var database: DatabaseReference
+    private lateinit var auth: FirebaseAuth
+
+    //adapters
+    private lateinit var updatesAdapter: UpdatesAdapter
+    private lateinit var recommendationsAdapter: RecommendationsAdapter
+    private lateinit var weeksAdapter: WeeksAdapter
+
+    //models
+    private var updatesArrayList = mutableListOf<UpdatesData>()
+    private var recommendArrayList = mutableListOf<UpdatesData>()
+    private var weekArrayList = mutableListOf<WeekData>()
+
 
     override fun onCreateView(
         inflater: LayoutInflater, container: ViewGroup?,
         savedInstanceState: Bundle?
-    ): View? {
-        // Inflate the layout for this fragment
-        return inflater.inflate(R.layout.fragment_home, container, false)
+    ): View {
+
+        binding = FragmentHomeBinding.inflate(inflater, container, false)
+
+        return binding.root
     }
 
-    companion object {
-        /**
-         * Use this factory method to create a new instance of
-         * this fragment using the provided parameters.
-         *
-         * @param param1 Parameter 1.
-         * @param param2 Parameter 2.
-         * @return A new instance of fragment HomeFragment.
-         */
-        // TODO: Rename and change types and number of parameters
-        @JvmStatic
-        fun newInstance(param1: String, param2: String) =
-            HomeFragment().apply {
-                arguments = Bundle().apply {
-                    putString(ARG_PARAM1, param1)
-                    putString(ARG_PARAM2, param2)
+    override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
+        super.onViewCreated(view, savedInstanceState)
+
+        auth = FirebaseAuth.getInstance()
+
+        // Fetch and display user name
+        fetchAndDisplayUserName()
+
+        binding.updateWeek.setOnClickListener {
+            val intent = Intent(requireActivity(), Week::class.java)
+            startActivity(intent)
+        }
+        binding.ai.setOnClickListener {
+            val intent = Intent(requireActivity(), Ai::class.java)
+            startActivity(intent)
+        }
+
+        getMyTrack()
+
+        val layoutManager = LinearLayoutManager(context, LinearLayoutManager.VERTICAL, false)
+        val recycler1 = binding.updatesRecyclerView
+        recycler1.layoutManager = layoutManager
+        recycler1.setHasFixedSize(true)
+        updatesAdapter = UpdatesAdapter(updatesArrayList)
+        recycler1.adapter = updatesAdapter
+        updatesAdapter.notifyDataSetChanged()
+
+        getRecommendation()
+
+        val layoutManager2 = LinearLayoutManager(context, LinearLayoutManager.VERTICAL, false)
+        val recycler2 = binding.recommendationRecyclerView
+        recycler2.layoutManager = layoutManager2
+        recycler2.setHasFixedSize(true)
+        recommendationsAdapter = RecommendationsAdapter(recommendArrayList)
+        recycler2.adapter = recommendationsAdapter
+        recommendationsAdapter.notifyDataSetChanged()
+
+
+        getWeek()
+
+        val layoutManager3 = LinearLayoutManager(context, LinearLayoutManager.HORIZONTAL, false)
+        val recycler3 = binding.weekRecyclerView
+        recycler3.layoutManager = layoutManager3
+        recycler3.setHasFixedSize(true)
+        weeksAdapter = WeeksAdapter(weekArrayList)
+        recycler3.adapter = weeksAdapter
+        weeksAdapter.notifyDataSetChanged()
+
+    }
+
+    private fun fetchAndDisplayUserName() {
+        val currentUser = auth.currentUser
+        val userId = currentUser?.uid
+
+        if (userId != null) {
+            val userRef =
+                FirebaseDatabase.getInstance().getReference("registeredUser").child(userId)
+            userRef.addListenerForSingleValueEvent(object : ValueEventListener {
+                override fun onDataChange(snapshot: DataSnapshot) {
+                    if (snapshot.exists()) {
+                        Log.e("Tag", "exists")
+
+                        val userData = snapshot.getValue(UserData::class.java)
+                        Log.e("UserData", userData.toString())
+                        if (userData != null) {
+                            val userName = userData.name ?: "Unknown"
+                            Log.e("HomeFragment", "User name retrieved: $userName")
+                            binding.userName.text = userName
+                        } else {
+                            Log.e(TAG, "Userdata Doesn't Exist")
+                        }
+                    } else {
+                        Log.e(TAG, "User data snapshot does not exist")
+//                        Timber.tag("HomeFragment").e("User data snapshot does not exist")
+                    }
                 }
+
+                override fun onCancelled(error: DatabaseError) {
+                    // Handle database error
+                    Log.e("HomeFragment", "Failed to fetch user data: ${error.message}")
+                    Toast.makeText(
+                        requireContext(),
+                        "Failed to fetch user data",
+                        Toast.LENGTH_SHORT
+                    ).show()
+                }
+            })
+        } else {
+            Log.e("HomeFragment", "Current user ID is null")
+        }
+    }
+
+
+    private fun getMyTrack() {
+        database = Firebase.database.reference
+        database.child("myTrack").get()
+            .addOnSuccessListener { dataSnapshot ->
+                for (trackSnapshot in dataSnapshot.children) {
+                    val id = trackSnapshot.child("id").getValue(String::class.java)
+                    val milestones = trackSnapshot.child("milestones").getValue(String::class.java)
+                    val visits = trackSnapshot.child("visits").getValue(String::class.java)
+                    val metrics = trackSnapshot.child("metrics").getValue(String::class.java)
+                    val weightRecommendation = trackSnapshot.child("weightRecommendation").getValue(String::class.java)
+                    val uid = trackSnapshot.child("uid").getValue(String::class.java)
+
+                    if (id != null && milestones != null && visits != null && metrics != null && uid != null && weightRecommendation != null) {
+                        val track =
+                            UpdatesData(id, milestones, visits, metrics, weightRecommendation)
+                        updatesArrayList.add(track)
+                    }
+                }
+                recommendationsAdapter.notifyDataSetChanged()
+                Log.d("data", updatesArrayList.toString())
+
             }
     }
+
+    private fun getRecommendation() {
+        database = Firebase.database.reference
+        database.child("myTrack").get()
+            .addOnSuccessListener { dataSnapshot ->
+                for (trackSnapshot in dataSnapshot.children) {
+                    val id = trackSnapshot.child("id").getValue(String::class.java)
+                    val milestones = trackSnapshot.child("milestones").getValue(String::class.java)
+                    val visits = trackSnapshot.child("visits").getValue(String::class.java)
+                    val metrics = trackSnapshot.child("metrics").getValue(String::class.java)
+                    val weightRecommendation =
+                        trackSnapshot.child("weightRecommendation").getValue(String::class.java)
+                    val uid = trackSnapshot.child("uid").getValue(String::class.java)
+
+                    Log.d("tracks", "Id: $id, Milestones:  $milestones, Visits: $visits, Metrics: $metrics, WeightReccoms: $weightRecommendation")
+
+                    if (id != null && milestones != null && visits != null && metrics != null && uid != null && weightRecommendation != null) {
+                        val track =
+                            UpdatesData(id, milestones, visits, metrics, weightRecommendation)
+                        recommendArrayList.add(track)
+                    }
+                }
+                updatesAdapter.notifyDataSetChanged()
+
+            }
+    }
+
+    private fun getWeek() {
+        database = Firebase.database.reference
+        database.child("weeks").get()
+            .addOnSuccessListener { dataSnapshot ->
+                for (weekSnapshot in dataSnapshot.children) {
+                    val id = weekSnapshot.child("id").getValue(String::class.java)
+                    val week = weekSnapshot.child("week").getValue(String::class.java)
+                    val uid = weekSnapshot.child("uid").getValue(String::class.java)
+
+                    if (id != null && week != null && uid != null) {
+                        val week = WeekData(id, week, uid)
+                        weekArrayList.add(week)
+                    }
+                }
+                weeksAdapter.notifyDataSetChanged()
+
+            }
+    }
+
+
 }
