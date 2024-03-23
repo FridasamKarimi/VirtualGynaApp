@@ -1,10 +1,13 @@
 package com.example.virtualgyna.fragment
 
+import android.content.ContentValues.TAG
 import android.content.Intent
 import android.os.Bundle
+import android.util.Log
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
+import android.widget.Toast
 import androidx.fragment.app.Fragment
 import androidx.recyclerview.widget.LinearLayoutManager
 import com.example.virtualgyna.adapters.RecommendationsAdapter
@@ -13,13 +16,20 @@ import com.example.virtualgyna.adapters.WeeksAdapter
 import com.example.virtualgyna.ai.screens.Ai
 import com.example.virtualgyna.databinding.FragmentHomeBinding
 import com.example.virtualgyna.models.UpdatesData
+import com.example.virtualgyna.models.UserData
 import com.example.virtualgyna.models.WeekData
 import com.example.virtualgyna.screens.Week
+import com.google.firebase.Firebase
+import com.google.firebase.auth.FirebaseAuth
+import com.google.firebase.database.*
 
 
 class HomeFragment : Fragment() {
 
     private lateinit var binding: FragmentHomeBinding
+
+    private lateinit var database: DatabaseReference
+    private lateinit var auth: FirebaseAuth
 
     //adapters
     private lateinit var updatesAdapter: UpdatesAdapter
@@ -45,6 +55,11 @@ class HomeFragment : Fragment() {
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         super.onViewCreated(view, savedInstanceState)
 
+        auth = FirebaseAuth.getInstance()
+
+        // Fetch and display user name
+        fetchAndDisplayUserName()
+
         binding.updateWeek.setOnClickListener {
             val intent = Intent(requireActivity(), Week::class.java)
             startActivity(intent)
@@ -54,7 +69,8 @@ class HomeFragment : Fragment() {
             startActivity(intent)
         }
 
-        dataIntialize()
+        getMyTrack()
+
         val layoutManager = LinearLayoutManager(context, LinearLayoutManager.VERTICAL, false)
         val recycler1 = binding.updatesRecyclerView
         recycler1.layoutManager = layoutManager
@@ -63,8 +79,8 @@ class HomeFragment : Fragment() {
         recycler1.adapter = updatesAdapter
         updatesAdapter.notifyDataSetChanged()
 
+        getRecommendation()
 
-        dataIntialize2()
         val layoutManager2 = LinearLayoutManager(context, LinearLayoutManager.VERTICAL, false)
         val recycler2 = binding.recommendationRecyclerView
         recycler2.layoutManager = layoutManager2
@@ -73,7 +89,9 @@ class HomeFragment : Fragment() {
         recycler2.adapter = recommendationsAdapter
         recommendationsAdapter.notifyDataSetChanged()
 
-        dataIntialize3()
+
+        getWeek()
+
         val layoutManager3 = LinearLayoutManager(context, LinearLayoutManager.HORIZONTAL, false)
         val recycler3 = binding.weekRecyclerView
         recycler3.layoutManager = layoutManager3
@@ -84,172 +102,116 @@ class HomeFragment : Fragment() {
 
     }
 
-    private fun dataIntialize3() {
-        weekArrayList = arrayListOf(
-            WeekData("", "", "2"),
-            WeekData("", "", "7"),
-            WeekData("", "", "9"),
-            WeekData("", "", "12"),
-            WeekData("", "", "2"),
-            WeekData("", "", "7"),
-            WeekData("", "", "9"),
-            WeekData("", "", "12"),
-            WeekData("", "", "2"),
-            WeekData("", "", "7"),
-            WeekData("", "", "9"),
-            WeekData("", "", "12"),
-        )
+    private fun fetchAndDisplayUserName() {
+        val currentUser = auth.currentUser
+        val userId = currentUser?.uid
+
+        if (userId != null) {
+            val userRef =
+                FirebaseDatabase.getInstance().getReference("registeredUser").child(userId)
+            userRef.addListenerForSingleValueEvent(object : ValueEventListener {
+                override fun onDataChange(snapshot: DataSnapshot) {
+                    if (snapshot.exists()) {
+                        Log.e("Tag", "exists")
+
+                        val userData = snapshot.getValue(UserData::class.java)
+                        Log.e("UserData", userData.toString())
+                        if (userData != null) {
+                            val userName = userData.name ?: "Unknown"
+                            Log.e("HomeFragment", "User name retrieved: $userName")
+                            binding.userName.text = userName
+                        } else {
+                            Log.e(TAG, "Userdata Doesn't Exist")
+                        }
+                    } else {
+                        Log.e(TAG, "User data snapshot does not exist")
+//                        Timber.tag("HomeFragment").e("User data snapshot does not exist")
+                    }
+                }
+
+                override fun onCancelled(error: DatabaseError) {
+                    // Handle database error
+                    Log.e("HomeFragment", "Failed to fetch user data: ${error.message}")
+                    Toast.makeText(
+                        requireContext(),
+                        "Failed to fetch user data",
+                        Toast.LENGTH_SHORT
+                    ).show()
+                }
+            })
+        } else {
+            Log.e("HomeFragment", "Current user ID is null")
+        }
     }
 
-    private fun dataIntialize() {
-        updatesArrayList = arrayListOf(
-            UpdatesData("", "", "Day 22", "100", "200", ""),
-            UpdatesData("", "", "Day 18", "300", "300", ""),
-            UpdatesData("", "", "Day 20", "200", "92", ""),
-            UpdatesData("", "", "Day 16", "500", "20", ""),
-            UpdatesData("", "", "Day 10", "50", "0", ""),
-            UpdatesData("", "", "Day 33", "30", "10", ""),
-            UpdatesData("", "", "Day 35", "70", "45", ""),
-            UpdatesData("", "", "Day 29", "600", "w23", ""),
-            UpdatesData("", "", "Day 10", "50", "0", ""),
-            UpdatesData("", "", "Day 33", "30", "10", ""),
-            UpdatesData("", "", "Day 35", "70", "45", ""),
-            UpdatesData("", "", "Day 29", "600", "w23", ""),
-            UpdatesData("", "", "Day 11", "100", "2737", ""),
-        )
+
+    private fun getMyTrack() {
+        database = Firebase.database.reference
+        database.child("myTrack").get()
+            .addOnSuccessListener { dataSnapshot ->
+                for (trackSnapshot in dataSnapshot.children) {
+                    val id = trackSnapshot.child("id").getValue(String::class.java)
+                    val milestones = trackSnapshot.child("milestones").getValue(String::class.java)
+                    val visits = trackSnapshot.child("visits").getValue(String::class.java)
+                    val metrics = trackSnapshot.child("metrics").getValue(String::class.java)
+                    val weightRecommendation = trackSnapshot.child("weightRecommendation").getValue(String::class.java)
+                    val uid = trackSnapshot.child("uid").getValue(String::class.java)
+
+                    if (id != null && milestones != null && visits != null && metrics != null && uid != null && weightRecommendation != null) {
+                        val track =
+                            UpdatesData(id, milestones, visits, metrics, weightRecommendation)
+                        updatesArrayList.add(track)
+                    }
+                }
+                recommendationsAdapter.notifyDataSetChanged()
+                Log.d("data", updatesArrayList.toString())
+
+            }
     }
 
-    private fun dataIntialize2() {
-        recommendArrayList = arrayListOf(
-            UpdatesData(
-                "",
-                "",
-                "",
-                "",
-                "",
-                "special features to help you find exactly what you're looking ..."
-            ),
-            UpdatesData(
-                "",
-                "",
-                "",
-                "",
-                "",
-                "Real-time meetings by Google. Using your browser, share your ..."
-            ),
-            UpdatesData(
-                "",
-                "",
-                "",
-                "",
-                "",
-                "Google sign-in has a new look. We've improved the sign-in page ..."
-            ),
-            UpdatesData(
-                "",
-                "",
-                "",
-                "",
-                "",
-                "In your Google Account, you can see and manage your info"
-            ),
-            UpdatesData(
-                "",
-                "",
-                "",
-                "",
-                "",
-                "special features to help you find exactly what you're looking ..."
-            ),
-            UpdatesData(
-                "",
-                "",
-                "",
-                "",
-                "",
-                "Real-time meetings by Google. Using your browser, share your ..."
-            ),
-            UpdatesData(
-                "",
-                "",
-                "",
-                "",
-                "",
-                "Google sign-in has a new look. We've improved the sign-in page ..."
-            ),
-            UpdatesData(
-                "",
-                "",
-                "",
-                "",
-                "",
-                "In your Google Account, you can see and manage your info"
-            ),
-            UpdatesData(
-                "",
-                "",
-                "",
-                "",
-                "",
-                "special features to help you find exactly what you're looking ..."
-            ),
-            UpdatesData(
-                "",
-                "",
-                "",
-                "",
-                "",
-                "Real-time meetings by Google. Using your browser, share your ..."
-            ),
-            UpdatesData(
-                "",
-                "",
-                "",
-                "",
-                "",
-                "Google sign-in has a new look. We've improved the sign-in page ..."
-            ),
-            UpdatesData(
-                "",
-                "",
-                "",
-                "",
-                "",
-                "In your Google Account, you can see and manage your info"
-            ),
-            UpdatesData(
-                "",
-                "",
-                "",
-                "",
-                "",
-                "special features to help you find exactly what you're looking ..."
-            ),
-            UpdatesData(
-                "",
-                "",
-                "",
-                "",
-                "",
-                "Real-time meetings by Google. Using your browser, share your ..."
-            ),
-            UpdatesData(
-                "",
-                "",
-                "",
-                "",
-                "",
-                "Google sign-in has a new look. We've improved the sign-in page ..."
-            ),
-            UpdatesData(
-                "",
-                "",
-                "",
-                "",
-                "",
-                "In your Google Account, you can see and manage your info"
-            )
-        )
+    private fun getRecommendation() {
+        database = Firebase.database.reference
+        database.child("myTrack").get()
+            .addOnSuccessListener { dataSnapshot ->
+                for (trackSnapshot in dataSnapshot.children) {
+                    val id = trackSnapshot.child("id").getValue(String::class.java)
+                    val milestones = trackSnapshot.child("milestones").getValue(String::class.java)
+                    val visits = trackSnapshot.child("visits").getValue(String::class.java)
+                    val metrics = trackSnapshot.child("metrics").getValue(String::class.java)
+                    val weightRecommendation =
+                        trackSnapshot.child("weightRecommendation").getValue(String::class.java)
+                    val uid = trackSnapshot.child("uid").getValue(String::class.java)
+
+                    Log.d("tracks", "Id: $id, Milestones:  $milestones, Visits: $visits, Metrics: $metrics, WeightReccoms: $weightRecommendation")
+
+                    if (id != null && milestones != null && visits != null && metrics != null && uid != null && weightRecommendation != null) {
+                        val track =
+                            UpdatesData(id, milestones, visits, metrics, weightRecommendation)
+                        recommendArrayList.add(track)
+                    }
+                }
+                updatesAdapter.notifyDataSetChanged()
+
+            }
+    }
+
+    private fun getWeek() {
+        database = Firebase.database.reference
+        database.child("weeks").get()
+            .addOnSuccessListener { dataSnapshot ->
+                for (weekSnapshot in dataSnapshot.children) {
+                    val id = weekSnapshot.child("id").getValue(String::class.java)
+                    val week = weekSnapshot.child("week").getValue(String::class.java)
+                    val uid = weekSnapshot.child("uid").getValue(String::class.java)
+
+                    if (id != null && week != null && uid != null) {
+                        val week = WeekData(id, week, uid)
+                        weekArrayList.add(week)
+                    }
+                }
+                weeksAdapter.notifyDataSetChanged()
+
+            }
     }
 
 
