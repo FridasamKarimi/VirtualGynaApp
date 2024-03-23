@@ -33,6 +33,11 @@ class ProfileFragment : Fragment() {
         auth = FirebaseAuth.getInstance()
         database = FirebaseDatabase.getInstance().getReference("registeredUser")
         getData()
+
+
+        binding.btnLogout.setOnClickListener {
+            logout()
+        }
     }
 
     private fun getData() {
