@@ -184,9 +184,9 @@ class HomeFragment : Fragment() {
 
                     Log.d("tracks", "Id: $id, Milestones:  $milestones, Visits: $visits, Metrics: $metrics, WeightReccoms: $weightRecommendation")
 
-                    if (id != null && milestones != null && visits != null && metrics != null && uid != null && weightRecommendation != null) {
+                    if ( milestones != null && visits != null && metrics != null && uid != null && weightRecommendation != null) {
                         val track =
-                            UpdatesData(id, milestones, visits, metrics, weightRecommendation)
+                            UpdatesData(uid, milestones, visits, metrics, weightRecommendation)
                         recommendArrayList.add(track)
                     }
                 }
@@ -200,12 +200,11 @@ class HomeFragment : Fragment() {
         database.child("weeks").get()
             .addOnSuccessListener { dataSnapshot ->
                 for (weekSnapshot in dataSnapshot.children) {
-                    val id = weekSnapshot.child("id").getValue(String::class.java)
                     val week = weekSnapshot.child("week").getValue(String::class.java)
                     val uid = weekSnapshot.child("uid").getValue(String::class.java)
 
-                    if (id != null && week != null && uid != null) {
-                        val week = WeekData(id, week, uid)
+                    if (week != null && uid != null) {
+                        val week = WeekData(uid, week)
                         weekArrayList.add(week)
                     }
                 }
